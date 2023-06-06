@@ -185,22 +185,20 @@ router.post(
   authorizeAdmin,
   AsyncError(async (req, res) => {
     try {
-      const hashedPasswords = await bcrypt.hash(req.body.password, 10);
-
       const user = new User({
         name: req.body.name,
         username: req.body.username,
-        password: hashedPasswords,
+        password: req.body.password,
         nis: req.body.nis,
         class: req.body.class,
         grade: req.body.grade,
-        email: req.body.email,
         phone: req.body.phone,
+        role: req.body.role,
       });
 
       await user.save();
 
-      return res.status(201).json({ user, message: "Berhasil ditambahkan" });
+      return res.status(201).json({ message: "Berhasil ditambahkan" });
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
@@ -220,28 +218,21 @@ router.post(
       const worksheet = workbook.Sheets[sheetName];
       const data = xlsx.utils.sheet_to_json(worksheet);
 
-      let savedCount = 0;
+      const users = data.map((item) => ({
+        nis: item.nis,
+        name: item.nama,
+        grade: item.tingkat,
+        class: item.kelas,
+        username: item.username,
+        password: item.password,
+      }));
 
-      for (const item of data) {
-        const user = new User({
-          nis: item.nis,
-          name: item.nama,
-          major: item.jurusan,
-          grade: item.tingkat,
-          class: item.kelas,
-          username: item.username,
-          password: item.password,
-        });
-
-        await user.save();
-
-        savedCount++;
-      }
+      const result = await User.insertMany(users);
 
       fs.unlinkSync(req.file.path);
 
       return res.status(200).json({
-        message: `${savedCount} user berhasil disimpan`,
+        message: `${result.length} pengguna berhasil disimpan`,
       });
     } catch (error) {
       return res.status(500).json({ message: error.message });
@@ -302,8 +293,8 @@ router.get(
   AsyncError(async (req, res, next) => {
     try {
       const students = await User.find({ role: "siswa" })
-        .populate("class")
-        .populate("major");
+        .sort({ createdAt: -1 })
+        .populate("class");
 
       return res.status(200).json({ total: students.length, students });
     } catch (error) {
