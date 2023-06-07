@@ -203,42 +203,39 @@ router.post(
       const data = xlsx.utils.sheet_to_json(worksheet);
 
       let savedCount = 0;
-      const questionIds = [];
+      let questionIds = [];
 
       const exam = await Exam.findById(req.params.id);
 
-      for (const item of data) {
-        const newQuestions = new Questions({
-          question: item.pertanyaan,
-          img: item.gambar,
-          audio: item.audio,
-          type: item.type,
-          options: {
-            A: item.A,
-            imgA: item.gambarA,
-            B: item.B,
-            imgB: item.gambarB,
-            C: item.C,
-            imgC: item.gambarC,
-            D: item.D,
-            imgD: item.gambarD,
-            E: item.E,
-            imgE: item.gambarE,
-          },
-          answer: item.jawaban,
-          examId: exam._id,
-        });
+      const questions = data.map((item) => ({
+        question: item.pertanyaan,
+        img: item.gambar,
+        audio: item.audio,
+        type: item.type,
+        options: {
+          A: item.A,
+          imgA: item.gambarA,
+          B: item.B,
+          imgB: item.gambarB,
+          C: item.C,
+          imgC: item.gambarC,
+          D: item.D,
+          imgD: item.gambarD,
+          E: item.E,
+          imgE: item.gambarE,
+        },
+        answer: item.jawaban,
+        examId: exam._id,
+      }));
 
-        const questions = await newQuestions.save();
+      const savedQuestions = await Questions.insertMany(questions);
 
-        questionIds.push(questions._id);
-
-        savedCount++;
-      }
+      savedCount = savedQuestions.length;
+      questionIds = savedQuestions.map((question) => question._id);
 
       exam.questions = questionIds;
 
-      exam.save();
+      await exam.save();
 
       fs.unlinkSync(req.file.path);
 
