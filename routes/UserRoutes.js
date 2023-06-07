@@ -392,35 +392,27 @@ router.post(
       const worksheet = workbook.Sheets[sheetName];
       const data = xlsx.utils.sheet_to_json(worksheet);
 
-      let savedCount = 0;
+      const users = data.map((item) => ({
+        name: item.name,
+        mapel: item.mapel,
+        username: item.username,
+        password: item.password,
+        phone: item.phone,
+        role: "guru",
+      }));
 
-      for (const item of data) {
-        const user = new User({
-          name: item.name,
-          mapel: item.mapel,
-          username: item.username,
-          password: item.password,
-          phone: item.phone,
-          role: "guru",
-        });
-
-        await user.save();
-
-        savedCount++;
-      }
+      const savedUsers = await User.insertMany(users);
 
       fs.unlinkSync(req.file.path);
 
       return res.status(200).json({
-        message: `${savedCount} Guru berhasil disimpan`,
+        message: `${savedUsers.length} Guru berhasil disimpan`,
       });
     } catch (error) {
-      next(new ErrorHandler(error, 500));
       return res.status(500).json({ message: error.message });
     }
   }
 );
-
 // DETAIL GURU
 router.get(
   "/teacher/:id",
@@ -469,8 +461,6 @@ router.put(
 // MENAMPILKAN SELURUH GURU
 router.get(
   "/teachers-all",
-  authenticateToken,
-  authorizeAdmin,
   AsyncError(async (req, res, next) => {
     try {
       const teachers = await User.find({ role: "guru" });
