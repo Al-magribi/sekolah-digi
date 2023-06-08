@@ -15,6 +15,7 @@ import fs from "fs";
 import Exam from "../models/Exam.js";
 import Answer from "../models/Answer.js";
 import Questions from "../models/Questions.js";
+import Ebook from "../models/Ebook.js";
 import Payment from "../models/Payment.js";
 
 const router = express.Router();
@@ -497,6 +498,8 @@ router.delete(
       });
 
       await Exam.deleteMany({ user: teacher._id });
+
+      await Ebook.deleteMany({ user: teacher._id });
 
       await Questions.deleteMany({
         examId: { $in: exams.map((exam) => exam._id) },
