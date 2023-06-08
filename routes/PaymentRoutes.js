@@ -11,12 +11,71 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
-// SERVER KEY MIDTRANS
+// SERVER NOTIFICATION
+router.post("/v1/notification", async (req, res) => {
+  const core = new midtransClient.CoreApi();
+
+  core.apiConfig.set({
+    isProduction: true,
+    serverKey: process.env.SERVER_KEY,
+    clientKey: process.env.CLIENT_KEY,
+  });
+  try {
+    const statusResponse = await core.transaction.notification(req.body);
+    const orderId = statusResponse.order_id;
+    const transactionStatus = statusResponse.transaction_status;
+    const fraudStatus = statusResponse.fraud_status;
+
+    console.log(statusResponse);
+
+    if (transactionStatus == "capture") {
+      if (fraudStatus == "challenge") {
+        // TODO set transaction status on your database to 'challenge'
+        // and response with 200 OK
+        updateTransaction("pending", orderId);
+        res.status(200);
+      } else if (fraudStatus == "accept") {
+        // TODO set transaction status on your database to 'success'
+        // and response with 200 OK
+        updateProduct(orderId);
+        updateTransaction("success", orderId);
+        res.status(200);
+      }
+    } else if (transactionStatus == "settlement") {
+      // TODO set transaction status on your database to 'success'
+      // and response with 200 OK
+      res.status(200).json({ message: "Pembayaran Berhasil" });
+      updateTransaction("success", orderId);
+      res.status(200);
+    } else if (
+      transactionStatus == "cancel" ||
+      transactionStatus == "deny" ||
+      transactionStatus == "expire"
+    ) {
+      // TODO set transaction status on your database to 'failure'
+      // and response with 200 OK
+      res.status(200).json({ message: "Pembayaran Gagal" });
+      updateTransaction("failed", orderId);
+      res.status(200);
+    } else if (transactionStatus == "pending") {
+      // TODO set transaction status on your database to 'pending' / waiting payment
+      // and response with 200 OK
+      res.status(200).json({ message: "Pembayaran Berhasil" });
+      updateTransaction("pending", orderId);
+      res.status(200);
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500);
+
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // HANDLE PEMBAYARAN DENGAN MIDTRANS
 router.post("/transaction", (req, res) => {
   let snap = new midtransClient.Snap({
-    isProduction: false,
+    isProduction: true,
     serverKey: process.env.SERVER_KEY,
     clientKey: process.env.CLIENT_KEY,
   });
@@ -80,7 +139,7 @@ router.get(
   authenticateToken,
   AsyncError(async (req, res) => {
     let snap = new midtransClient.Snap({
-      isProduction: false,
+      isProduction: true,
       serverKey: process.env.SERVER_KEY,
       clientKey: process.env.CLIENT_KEY,
     });

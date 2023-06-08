@@ -333,32 +333,6 @@ router.delete(
   }
 );
 
-// // UPLAOD GAMBAR KE SEVER
-// router.post(
-//   "/asset/upload",
-//   authenticateToken,
-//   authorizeAdminTeacher,
-//   upload.single("file"),
-//   async (req, res) => {
-//     console.log(req.file);
-//     try {
-//       const imgFile = req.file.path;
-//       const imgFileName = v4() + "." + imgFile.name;
-//       const imageStorageRef = ref(storage, `news/${imgFileName}`);
-//       const imageUploadTask = uploadBytesResumable(imageStorageRef, imgFile);
-
-//       await Promise.all([imageUploadTask]);
-
-//       const imageData = await getDownloadURL(imageUploadTask.snapshot.ref);
-
-//       res.status(200).json({ location: imageData });
-//     } catch (error) {
-//       console.log(error.message);
-//       res.status(500).send("Upload failed");
-//     }
-//   }
-// );
-
 // MENAMPILKAN UJIAN BERDASARKAN KELAS => HALAMAN SISWA
 router.get(
   "/my-exam/:grade",
