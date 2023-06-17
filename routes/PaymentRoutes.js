@@ -93,9 +93,6 @@ router.post("/transaction", (req, res) => {
         first_name: req.body.name,
         email: req.body.email,
       },
-      callbacks: {
-        finish: "http://localhost:3000/payment/status",
-      },
       enabled_payments: [
         "credit_card",
         "mandiri_clickpay",
